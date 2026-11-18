@@ -1,0 +1,190 @@
+{
+  "generated_at": "2026-11-16T19:42:21+00:00",
+  "dataset": {
+    "input_file": "premier_league_features.csv",
+    "features": [
+      "home_goals_avg_5",
+      "home_conceded_avg_5",
+      "home_points_avg_5",
+      "away_goals_avg_5",
+      "away_conceded_avg_5",
+      "away_points_avg_5"
+    ],
+    "label_mapping": {
+      "D": 0,
+      "H": 1,
+      "A": 2
+    },
+    "train_matches": 3040,
+    "test_matches": 760,
+    "train_seasons": [
+      2015,
+      2022
+    ],
+    "test_seasons": [
+      2023,
+      2024
+    ]
+  },
+  "models": {
+    "Baseline": {
+      "hyperparameters": {
+        "constant": null,
+        "random_state": null,
+        "strategy": "most_frequent"
+      },
+      "scores": {
+        "accuracy": 0.4342,
+        "balanced_accuracy": 0.3333,
+        "macro_f1": 0.2018,
+        "log_loss": 20.3931
+      },
+      "f1_by_class": {
+        "Draw": 0.0,
+        "Home Win": 0.6055045871559633,
+        "Away Win": 0.0
+      },
+      "confusion_matrix": [
+        [
+          0,
+          175,
+          0
+        ],
+        [
+          0,
+          330,
+          0
+        ],
+        [
+          0,
+          255,
+          0
+        ]
+      ]
+    },
+    "Random Forest": {
+      "hyperparameters": {
+        "bootstrap": true,
+        "ccp_alpha": 0.0,
+        "class_weight": "balanced",
+        "criterion": "gini",
+        "max_depth": 8,
+        "max_features": "sqrt",
+        "max_leaf_nodes": null,
+        "max_samples": null,
+        "min_impurity_decrease": 0.0,
+        "min_samples_leaf": 4,
+        "min_samples_split": 10,
+        "min_weight_fraction_leaf": 0.0,
+        "monotonic_cst": null,
+        "n_estimators": 400,
+        "n_jobs": -1,
+        "oob_score": false,
+        "random_state": 42,
+        "verbose": 0,
+        "warm_start": false
+      },
+      "scores": {
+        "accuracy": 0.4776,
+        "balanced_accuracy": 0.4366,
+        "macro_f1": 0.4298,
+        "log_loss": 1.0582
+      },
+      "f1_by_class": {
+        "Draw": 0.2152777777777778,
+        "Home Win": 0.5531295487627366,
+        "Away Win": 0.5211009174311927
+      },
+      "confusion_matrix": [
+        [
+          31,
+          89,
+          55
+        ],
+        [
+          47,
+          190,
+          93
+        ],
+        [
+          35,
+          78,
+          142
+        ]
+      ]
+    },
+    "XGBoost": {
+      "hyperparameters": {
+        "objective": "multi:softprob",
+        "base_score": null,
+        "booster": null,
+        "callbacks": null,
+        "colsample_bylevel": null,
+        "colsample_bynode": null,
+        "colsample_bytree": 0.85,
+        "device": null,
+        "early_stopping_rounds": null,
+        "enable_categorical": true,
+        "eval_metric": "mlogloss",
+        "feature_types": null,
+        "feature_weights": null,
+        "gamma": null,
+        "grow_policy": null,
+        "importance_type": null,
+        "interaction_constraints": null,
+        "learning_rate": 0.04,
+        "max_bin": null,
+        "max_cat_threshold": null,
+        "max_cat_to_onehot": null,
+        "max_delta_step": null,
+        "max_depth": 4,
+        "max_leaves": null,
+        "min_child_weight": null,
+        "missing": NaN,
+        "monotone_constraints": null,
+        "multi_strategy": null,
+        "n_estimators": 400,
+        "n_jobs": -1,
+        "num_parallel_tree": null,
+        "random_state": 42,
+        "reg_alpha": null,
+        "reg_lambda": 1,
+        "sampling_method": null,
+        "scale_pos_weight": null,
+        "subsample": 0.85,
+        "tree_method": null,
+        "validate_parameters": null,
+        "verbosity": null,
+        "num_class": 3
+      },
+      "scores": {
+        "accuracy": 0.4632,
+        "balanced_accuracy": 0.3918,
+        "macro_f1": 0.3561,
+        "log_loss": 1.0685
+      },
+      "f1_by_class": {
+        "Draw": 0.04878048780487805,
+        "Home Win": 0.5783132530120482,
+        "Away Win": 0.44123711340206184
+      },
+      "confusion_matrix": [
+        [
+          5,
+          124,
+          46
+        ],
+        [
+          13,
+          240,
+          77
+        ],
+        [
+          12,
+          136,
+          107
+        ]
+      ]
+    }
+  }
+}
