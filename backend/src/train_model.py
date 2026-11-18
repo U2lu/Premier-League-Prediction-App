@@ -1,7 +1,10 @@
 
+import json
+
 import pandas as pd
 import joblib
 
+from datetime import datetime, timezone
 from pathlib import Path
 
 from sklearn.ensemble import RandomForestClassifier
@@ -26,6 +29,9 @@ INPUT_FILE = DATA_DIR / "premier_league_features.csv"
 
 MODEL_DIR = Path(__file__).resolve().parent.parent / "models"
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
+
+REPORT_DIR = Path(__file__).resolve().parent.parent / "reports"
+REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 FEATURES = [
     "home_goals_avg_5",
@@ -113,7 +119,20 @@ def split_data(df):
         test_df["season"].max()
     )
 
-    return X_train, X_test, y_train, y_test
+    split_info = {
+        "train_matches": int(len(X_train)),
+        "test_matches": int(len(X_test)),
+        "train_seasons": [
+            int(train_df["season"].min()),
+            int(train_df["season"].max()),
+        ],
+        "test_seasons": [
+            int(test_df["season"].min()),
+            int(test_df["season"].max()),
+        ],
+    }
+
+    return X_train, X_test, y_train, y_test, split_info
 
 # 4. Evaluate a trained model
 
@@ -162,13 +181,21 @@ def evaluate_model(name, model, X_test, y_test):
         )
     )
 
+    matrix = confusion_matrix(
+        y_test,
+        predictions,
+        labels=[0, 1, 2]
+    )
+
     print("Confusion Matrix:")
-    print(
-        confusion_matrix(
-            y_test,
-            predictions,
-            labels=[0, 1, 2]
-        )
+    print(matrix)
+
+    per_class_f1 = f1_score(
+        y_test,
+        predictions,
+        labels=[0, 1, 2],
+        average=None,
+        zero_division=0
     )
 
     return {
@@ -176,6 +203,11 @@ def evaluate_model(name, model, X_test, y_test):
         "balanced_accuracy": balanced_accuracy,
         "macro_f1": macro_f1,
         "log_loss": loss,
+        "f1_by_class": {
+            name: float(score)
+            for name, score in zip(CLASS_NAMES, per_class_f1)
+        },
+        "confusion_matrix": matrix.tolist(),
     }
 
 # 5. Train and compare models
@@ -184,7 +216,7 @@ def main():
 
     df = load_data()
 
-    X_train, X_test, y_train, y_test = split_data(df)
+    X_train, X_test, y_train, y_test, split_info = split_data(df)
 
     # Baseline: always predict the most common training outcome.
     baseline = DummyClassifier(strategy="most_frequent")
@@ -248,17 +280,62 @@ def main():
 
     # 6. Compare results
 
+    summary_columns = [
+        "accuracy",
+        "balanced_accuracy",
+        "macro_f1",
+        "log_loss",
+    ]
+
     results = pd.DataFrame(
         [baseline_results, rf_results, xgb_results],
         index=["Baseline", "Random Forest", "XGBoost"]
-    )
+    )[summary_columns]
 
     print("\nMODEL COMPARISON")
     print("=" * 40)
 
     print(results.round(4))
 
-    # 7. Save trained models
+    # 7. Write the run to disk, so the numbers can be re-read later
+
+    run = {
+        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "dataset": {
+            "input_file": INPUT_FILE.name,
+            "features": FEATURES,
+            "label_mapping": LABEL_MAPPING,
+            **split_info,
+        },
+        "models": {},
+    }
+
+    for name, model, scores in (
+        ("Baseline", baseline, baseline_results),
+        ("Random Forest", random_forest, rf_results),
+        ("XGBoost", xgboost, xgb_results),
+    ):
+
+        run["models"][name] = {
+            "hyperparameters": model.get_params(),
+            "scores": {
+                column: round(float(scores[column]), 4)
+                for column in summary_columns
+            },
+            "f1_by_class": scores["f1_by_class"],
+            "confusion_matrix": scores["confusion_matrix"],
+        }
+
+    metrics_file = REPORT_DIR / "metrics.json"
+
+    metrics_file.write_text(
+        json.dumps(run, indent=2, default=str) + "\n",
+        encoding="utf-8"
+    )
+
+    print("\nMetrics written to:", metrics_file)
+
+    # 8. Save trained models
 
     joblib.dump(
         {
